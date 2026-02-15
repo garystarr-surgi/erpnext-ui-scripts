@@ -1,0 +1,72 @@
+frappe.ui.form.on("Customer", {
+    refresh(frm) {
+        update_lock_banner(frm);
+    },
+
+    // Trigger when overdue days field changes
+    custom_account_lock_days_overdue(frm) {
+        update_lock_banner(frm);
+    }
+});
+
+// --- Helper function ---
+function update_lock_banner(frm) {
+    const overdue_field = "custom_account_lock_days_overdue";  // numeric field for overdue days
+    const lock_field = "custom_lock_status";                   // HTML field for banner
+
+    const overdue_days = frm.doc[overdue_field] || 0;
+
+    console.log("Overdue days:", overdue_days);  // DEBUG: confirm value
+
+    let banner_html = "";
+
+    if (overdue_days >= 50) {
+        // 🔴 HARD LOCK
+        banner_html = `
+            <div style="
+                background-color: #f8d7da;
+                color: #721c24;
+                padding: 10px;
+                border-radius: 5px;
+                font-weight: bold;
+                border: 1px solid #f5c6cb;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            ">
+                <i class="fa fa-lock"></i>
+                CUSTOMER IS HARD LOCKED (50+ DAYS OVERDUE)
+            </div>`;
+    } else if (overdue_days >= 40) {
+        // 🟡 SOFT LOCK
+        banner_html = `
+            <div style="
+                background-color: #fff3cd;
+                color: #856404;
+                padding: 10px;
+                border-radius: 5px;
+                font-weight: bold;
+                border: 1px solid #ffeeba;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            ">
+                <i class="fa fa-exclamation-triangle"></i>
+                CUSTOMER IS SOFT LOCKED (40+ DAYS OVERDUE) SEE ACCOUNTING
+            </div>`;
+    }
+
+    // Render banner or hide if empty
+    if (frm.fields_dict[lock_field]) {
+        frm.fields_dict[lock_field].$wrapper.html(banner_html);
+
+        if (!banner_html) {
+            $(frm.fields_dict[lock_field].wrapper).hide();
+        } else {
+            $(frm.fields_dict[lock_field].wrapper).show();
+        }
+    } else {
+        console.warn("Lock HTML field not found:", lock_field);
+    }
+}
+
